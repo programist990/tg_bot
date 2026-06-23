@@ -19,6 +19,7 @@ import asyncio
 import logging
 from datetime import datetime
 from html import escape as h
+from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.client.default import DefaultBotProperties
@@ -248,9 +249,9 @@ async def forward_to_admin(
             f"⏳ Слишком часто! Подожди ещё {wait_left} сек. перед отправкой нового сообщения."
         )
         return
-    time_h = datetime.now().strftime("%H:" + 3)
-    timestamp = datetime.now().strftime(f"%d.%m.%Y {time_h}:%M")
-
+    time_with_offset = datetime.now() + timedelta(hours=3)
+    
+    timestamp = time_with_offset.strftime("%d.%m.%Y %H:%M")
     if anonymous:
         header_text = f"{label}\n🕓 {timestamp}"
     else:
