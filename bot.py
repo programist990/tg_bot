@@ -73,6 +73,7 @@ def main_menu() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=BTN_SUGGEST)],
             [KeyboardButton(text=BTN_COMPLAINT)],
             [KeyboardButton(text=BTN_ABOUT)],
+            [KeyboardButton(text="🚫 Не нажимать")],  # <- добавь эту строку
         ],
         resize_keyboard=True,
     )
@@ -223,6 +224,13 @@ async def ask_complaint(message: Message, state: FSMContext):
 
 
 # ---------- Универсальная логика пересылки ----------
+
+@router.message(F.text == "🚫 Не нажимать")
+async def dont_press(message: Message):
+    await message.answer(
+        "😈 Ну и зачем ты нажал?\n\n"
+        "https://www.pinterest.com/pin/599823244162397635/"
+    )
 
 async def forward_to_admin(
     message: Message,
