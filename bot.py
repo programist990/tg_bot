@@ -226,10 +226,12 @@ async def ask_complaint(message: Message, state: FSMContext):
 # ---------- Универсальная логика пересылки ----------
 
 @router.message(F.text == "🚫 Не нажимать")
-async def dont_press(message: Message):
-    await message.answer_photo(
+async def dont_press(message: Message, bot: Bot):
+    sent = await message.answer_photo(
         photo="https://i.pinimg.com/736x/3d/03/5c/3d035cf5c1dd05be1964b8b58bee16b3.jpg",
     )
+    await asyncio.sleep(1)
+    await bot.delete_message(chat_id=message.chat.id, message_id=sent.message_id)
 
 async def forward_to_admin(
     message: Message,
