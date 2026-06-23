@@ -227,9 +227,9 @@ async def ask_complaint(message: Message, state: FSMContext):
 
 @router.message(F.text == "🚫 Не нажимать")
 async def dont_press(message: Message):
-    await message.answer(
-        "😈 Ну и зачем ты нажал?\n\n"
-        "https://www.pinterest.com/pin/599823244162397635/"
+    await message.answer_photo(
+        photo="https://i.pinimg.com/736x/3d/03/5c/3d035cf5c1dd05be1964b8b58bee16b3.jpg",
+        caption="😈 Ну и зачем ты нажал?"
     )
 
 async def forward_to_admin(
