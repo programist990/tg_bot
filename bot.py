@@ -248,8 +248,8 @@ async def forward_to_admin(
             f"⏳ Слишком часто! Подожди ещё {wait_left} сек. перед отправкой нового сообщения."
         )
         return
-
-    timestamp = datetime.now().strftime("%d.%m.%Y %H+1:%M")
+    time_h = datetime.now().strftime("%H:" + 3)
+    timestamp = datetime.now().strftime(f"%d.%m.%Y {time_h}:%M")
 
     if anonymous:
         header_text = f"{label}\n🕓 {timestamp}"
