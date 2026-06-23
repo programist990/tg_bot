@@ -93,14 +93,88 @@ def cancel_menu() -> ReplyKeyboardMarkup:
 user_last_message: dict[int, float] = {}
 
 
+# ==================== АНТИСПАМ ====================
+user_last_message: dict[int, float] = {}
+
 def check_spam(user_id: int) -> float:
     """Возвращает 0, если можно отправлять, иначе — сколько секунд ещё ждать."""
     now = datetime.now().timestamp()
-    last = user_last_message.get(user_id, 0)
+    last = user_last_message.get(user_id)
+    
+    if last is None:
+        return 0
+        
     elapsed = now - last
     if elapsed < SPAM_INTERVAL:
         return round(SPAM_INTERVAL - elapsed)
     return 0
+
+def mark_message_sent(user_id: int) -> None:
+    user_last_message[user_id] = datetime.now().timestamp()
+
+
+# ==================== ИСПРАВЛЕННАЯ НАПРАВЛЯЮЩАЯ ФУНКЦИЯ ====================
+async def forward_to_admin(
+    message: Message,
+    state: FSMContext,
+    bot: Bot,
+    anonymous: bool,
+    label: str,
+) -> None:
+    user_id = message.from_user.id
+
+    # 1. Проверяем антиспам
+    wait_left = check_spam(user_id)
+    if wait_left > 0:
+        await message.answer(
+            f"⏳ Слишком часто! Подожди ещё {wait_left} сек. перед отправкой нового сообщения.",
+            reply_markup=main_menu() # Возвращаем меню, чтобы пользователь не залипал
+        )
+        await state.clear() # Сбрасываем состояние, чтобы не блокировать бота
+        return
+
+    timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    if anonymous:
+        header_text = f"{label}\n🕓 {timestamp}"
+    else:
+        user = message.from_user
+        username = f"@{h(user.username)}" if user.username else "нет username"
+        header_text = (
+            f"{label}\n"
+            f"👤 Имя: {h(user.full_name)}\n"
+            f"🔗 Username: {username}\n"
+            f"🆔 ID: <code>{user.id}</code>\n"
+            f"🕓 {timestamp}"
+        )
+
+    try:
+        # Отправляем заголовок админу
+        header_msg = await bot.send_message(ADMIN_ID, header_text)
+        # Копируем сообщение пользователя админу
+        content_msg = await bot.copy_message(
+            chat_id=ADMIN_ID,
+            from_chat_id=message.chat.id,
+            message_id=message.message_id,
+        )
+    except TelegramBadRequest as e:
+        logging.error("Ошибка пересылки администратору: %s", e)
+        await message.answer(
+            "⚠️ Не удалось отправить сообщение. Попробуй позже.",
+            reply_markup=main_menu(),
+        )
+        await state.clear()
+        return
+
+    # Запоминаем ID сообщений для ответа
+    reply_map[header_msg.message_id] = user_id
+    reply_map[content_msg.message_id] = user_id
+
+    # Фиксируем время отправки ПОСЛЕ успешного прохождения всех проверок
+    mark_message_sent(user_id)
+    
+    await state.clear()
+    await message.answer("✅ Сообщение отправлено! Спасибо.", reply_markup=main_menu())
 
 
 def mark_message_sent(user_id: int) -> None:
